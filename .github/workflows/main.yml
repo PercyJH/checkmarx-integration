@@ -1,0 +1,13 @@
+name: Checkmarx Integration - Concept
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+
+jobs:
+  sanity:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hello world
+        run: echo "Pipeline activo"
