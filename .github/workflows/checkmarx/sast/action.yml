@@ -1,0 +1,51 @@
+name: Checkmarx SAST Analysis
+description: Ejecuta análisis SAST con Checkmarx One
+
+inputs:
+  app-code:
+    description: Código de aplicación (UpperCase)
+    required: true
+  app-name:
+    description: Nombre de la aplicación
+    required: true
+  app-version:
+    description: Versión de la aplicación
+    required: true
+  environment:
+    description: Ambiente (dev, cert, prod)
+    required: false
+    default: dev
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set variables
+      id: vars
+      shell: bash
+      run: |
+        echo "APP_CODE=$(echo '${{ inputs.app-code }}' | tr '[:lower:]' '[:upper:]')" >> $GITHUB_OUTPUT
+        echo "PROJECT_NAME=${{ inputs.app-name }}" >> $GITHUB_OUTPUT
+        echo "PROJECT_VERSION=${{ inputs.environment }}-${{ inputs.app-version }}" >> $GITHUB_OUTPUT
+
+    - name: Run Checkmarx SAST
+      uses: Checkmarx/ast-github-action@v2
+      with:
+        base_uri: ${{ secrets.CHECKMARX_BASE_URI }}
+        tenant: ${{ secrets.CHECKMARX_TENANT }}
+        client_id: ${{ secrets.CHECKMARX_CLIENT_ID }}
+        client_secret: ${{ secrets.CHECKMARX_CLIENT_SECRET }}
+
+        project_name: ${{ steps.vars.outputs.APP_CODE }}
+        branch: ${{ github.ref_name }}
+
+        sast: true
+        incremental: true
+        fail_on: high
+
+    - name: Summary
+      shell: bash
+      run: |
+        echo "## Análisis SAST Checkmarx" >> $GITHUB_STEP_SUMMARY
+        echo "- Aplicación: ${{ steps.vars.outputs.APP_CODE }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Versión: ${{ steps.vars.outputs.PROJECT_VERSION }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Branch: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
