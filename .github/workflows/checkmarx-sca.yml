@@ -3,29 +3,40 @@ name: Checkmarx SCA Scan
 on:
   workflow_call:
     inputs:
-      project-name:
-        required: true
+      project_name:
+        required: false
         type: string
       branch:
-        required: true
+        required: false
         type: string
-    secrets:
-      CHECKMARX_TOKEN:
-        required: true
 
 jobs:
-  sca:
+  checkmarx-sca:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Checkmarx SCA scan (conceptual)
-        shell: bash
-        run: |
-          echo "Running Checkmarx SCA scan"
-          echo "Project: ${{ inputs.project-name }}"
-          echo "Branch: ${{ inputs.branch }}"
-          echo "Dependency analysis executed"
-          echo "SCA scan finished"
+      - name: Run Checkmarx One SCA Scan
+        uses: Checkmarx/ast-github-action@v2
+        with:
+          base_uri: ${{ secrets.CX_BASE_URI }}
+          cx_tenant: ${{ secrets.CX_TENANT }}
+          cx_client_id: ${{ secrets.CX_CLIENT_ID }}
+          cx_client_secret: ${{ secrets.CX_CLIENT_SECRET }}
+
+          project_name: ${{ inputs.project_name || github.repository }}
+          branch: ${{ inputs.branch || github.ref_name }}
+
+          scan_params: >
+            --scan-types sca
+
+          results_params: >
+            --report-format sarif
+            --output-path cx_sca_result.sarif
+
+      - name: Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: cx_sca_result.sarif
