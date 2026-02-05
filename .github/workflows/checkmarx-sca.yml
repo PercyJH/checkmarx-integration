@@ -1,0 +1,31 @@
+name: Checkmarx SCA Scan
+
+on:
+  workflow_call:
+    inputs:
+      project-name:
+        required: true
+        type: string
+      branch:
+        required: true
+        type: string
+    secrets:
+      CHECKMARX_TOKEN:
+        required: true
+
+jobs:
+  sca:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Checkmarx SCA scan (conceptual)
+        shell: bash
+        run: |
+          echo "Running Checkmarx SCA scan"
+          echo "Project: ${{ inputs.project-name }}"
+          echo "Branch: ${{ inputs.branch }}"
+          echo "Dependency analysis executed"
+          echo "SCA scan finished"
