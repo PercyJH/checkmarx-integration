@@ -17,7 +17,7 @@ inputs:
     default: dev
 
 runs:
-  using: "composite"
+  using: composite
   steps:
     - name: Set variables
       id: vars
@@ -28,12 +28,12 @@ runs:
         echo "PROJECT_VERSION=${{ inputs.environment }}-${{ inputs.app-version }}" >> $GITHUB_OUTPUT
 
     - name: Run Checkmarx SAST
-      uses: Checkmarx/ast-github-action@v2
+      uses: checkmarx/ast-github-action@v2
       with:
-        base_uri: ${{ secrets.CHECKMARX_BASE_URI }}
-        tenant: ${{ secrets.CHECKMARX_TENANT }}
-        client_id: ${{ secrets.CHECKMARX_CLIENT_ID }}
-        client_secret: ${{ secrets.CHECKMARX_CLIENT_SECRET }}
+        base_uri: ${{ env.CHECKMARX_BASE_URI }}
+        tenant: ${{ env.CHECKMARX_TENANT }}
+        client_id: ${{ env.CHECKMARX_CLIENT_ID }}
+        client_secret: ${{ env.CHECKMARX_CLIENT_SECRET }}
 
         project_name: ${{ steps.vars.outputs.APP_CODE }}
         branch: ${{ github.ref_name }}

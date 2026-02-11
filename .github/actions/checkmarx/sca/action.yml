@@ -20,8 +20,7 @@ runs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # 👉 Autenticación (placeholder enterprise)
-    - name: Authenticate to Checkmarx One
+    - name: Run Checkmarx SCA scan
       uses: checkmarx/ast-github-action@v2
       with:
         base_uri: ${{ env.CHECKMARX_BASE_URI }}
@@ -29,18 +28,13 @@ runs:
         client_id: ${{ env.CHECKMARX_CLIENT_ID }}
         client_secret: ${{ env.CHECKMARX_CLIENT_SECRET }}
         authentication_type: client_secret
-        persist_credentials: true
 
-    # 👉 SCA Scan
-    - name: Run Checkmarx SCA scan
-      uses: checkmarx/ast-github-action@v2
-      with:
         project_name: ${{ inputs.project-name }}
         branch: ${{ inputs.branch }}
+
         sca: true
         fail_on: ${{ inputs.fail-on-severity }}
 
-    # 👉 Nota importante para gerencia / vendor
     - name: Scan summary
       shell: bash
       run: |
