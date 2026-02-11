@@ -1,0 +1,85 @@
+name: Checkmarx Security Analysis
+description: Ejecuta análisis SAST + SCA con Checkmarx One (Vault Ready)
+
+inputs:
+  project-name:
+    description: Nombre del proyecto en Checkmarx One
+    required: true
+
+  branch:
+    description: Branch a escanear
+    required: false
+    default: ${{ github.ref_name }}
+
+  fail-on-severity:
+    description: Severidad para fallar pipeline (low|medium|high|critical)
+    required: false
+    default: high
+
+  vault-enabled:
+    description: Indica si se obtendrán credenciales desde HashiCorp Vault
+    required: true
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # ===================================================== CREDENCIAL
+
+    - name: Retrieve Checkmarx credentials from Vault
+      if: inputs.vault-enabled == 'true'
+      id: vault
+      shell: bash
+      run: |
+        echo "Retrieving credentials from Vault..."
+        # Aquí irá la integración real con HashiCorp Vault
+        # Ejemplo conceptual:
+        # vault kv get -field=client_id secret/checkmarx > client_id.txt
+        # vault kv get -field=client_secret secret/checkmarx > client_secret.txt
+
+        echo "CHECKMARX_CLIENT_ID=${{ env.CHECKMARX_CLIENT_ID }}" >> $GITHUB_ENV
+        echo "CHECKMARX_CLIENT_SECRET=${{ env.CHECKMARX_CLIENT_SECRET }}" >> $GITHUB_ENV
+        echo "CHECKMARX_TENANT=${{ env.CHECKMARX_TENANT }}" >> $GITHUB_ENV
+        echo "CHECKMARX_BASE_URI=${{ env.CHECKMARX_BASE_URI }}" >> $GITHUB_ENV
+
+    # ===================================================== AUTH
+
+    - name: Authenticate to Checkmarx One
+      uses: checkmarx/ast-github-action@v2
+      with:
+        base_uri: ${{ env.CHECKMARX_BASE_URI }}
+        tenant: ${{ env.CHECKMARX_TENANT }}
+        client_id: ${{ env.CHECKMARX_CLIENT_ID }}
+        client_secret: ${{ env.CHECKMARX_CLIENT_SECRET }}
+        authentication_type: client_secret
+        persist_credentials: true
+
+    # ===================================================== SAST + SCA
+
+    - name: Run Checkmarx SAST + SCA scan
+      uses: checkmarx/ast-github-action@v2
+      with:
+        project_name: ${{ inputs.project-name }}
+        branch: ${{ inputs.branch }}
+
+        # 👇 Ambos análisis activados
+        sast: true
+        sca: true
+
+        incremental: true
+        fail_on: ${{ inputs.fail-on-severity }}
+
+    # ===================================================== SUMMARY
+
+    - name: Summary
+      shell: bash
+      run: |
+        echo "## Checkmarx Security Analysis (SAST + SCA)" >> $GITHUB_STEP_SUMMARY
+        echo "- Project: ${{ inputs.project-name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Branch:  ${{ inputs.branch }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Scan Types: SAST + SCA" >> $GITHUB_STEP_SUMMARY
+        echo "- Vulnerability summary is provided natively by Checkmarx One." >> $GITHUB_STEP_SUMMARY
